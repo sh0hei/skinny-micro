@@ -19,7 +19,7 @@ trait ScalateI18nSupport
    * on first access. However, on subsequent accesses, it worked fine.
    */
   before() {
-    templateMicro.bindings ::= Binding("messages", classOf[Messages].getName, true, isImplicit = true)
+    templateEngine.bindings ::= Binding("messages", classOf[Messages].getName, true, isImplicit = true)
   }
 
   /**

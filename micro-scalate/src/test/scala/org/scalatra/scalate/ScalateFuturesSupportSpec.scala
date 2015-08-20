@@ -83,7 +83,7 @@ class ScalateFuturesSupportServlet(exec: ExecutorService)
   }
 
   get("/layout-strategy") {
-    new AsyncResult { val is = Future { templateMicro.layoutStrategy.asInstanceOf[DefaultLayoutStrategy].defaultLayouts mkString ";" } }
+    new AsyncResult { val is = Future { templateEngine.layoutStrategy.asInstanceOf[DefaultLayoutStrategy].defaultLayouts mkString ";" } }
   }
 
   val urlGeneration = get("/url-generation") {

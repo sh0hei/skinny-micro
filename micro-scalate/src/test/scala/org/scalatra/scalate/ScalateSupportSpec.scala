@@ -87,7 +87,7 @@ class ScalateSupportSpec extends ScalatraSpec {
     }
 
     get("/layout-strategy") {
-      templateMicro.layoutStrategy.asInstanceOf[DefaultLayoutStrategy].defaultLayouts mkString ";"
+      templateEngine.layoutStrategy.asInstanceOf[DefaultLayoutStrategy].defaultLayouts mkString ";"
     }
 
     val urlGeneration = get("/url-generation") {

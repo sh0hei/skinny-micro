@@ -19,11 +19,13 @@ import scala.collection.concurrent.{ Map => CMap, TrieMap }
 import scala.collection.mutable
 
 object ScalateSupport {
+
   val DefaultLayouts = Seq(
     "/WEB-INF/templates/layouts/default",
     "/WEB-INF/layouts/default",
     "/WEB-INF/scalate/layouts/default"
   )
+
   private def setLayoutStrategy(engine: TemplateEngine) = {
     val layouts = for {
       base <- ScalateSupport.DefaultLayouts
@@ -34,13 +36,13 @@ object ScalateSupport {
 
   private val TemplateAttributesKey = "skinny.micro.scalate.ScalateSupport.TemplateAttributes"
 
-  private val templateMicroInstances: CMap[String, TemplateEngine] = new TrieMap[String, TemplateEngine]
+  private val templateEngineInstances: CMap[String, TemplateEngine] = new TrieMap[String, TemplateEngine]
 
   def scalateTemplateEngine(ctx: String, init: => TemplateEngine): TemplateEngine = {
-    templateMicroInstances.get(ctx).getOrElse {
+    templateEngineInstances.get(ctx).getOrElse {
       val engine = init
       engine.workingDirectory = new java.io.File(engine.workingDirectory, ctx)
-      templateMicroInstances.putIfAbsent(ctx, engine).getOrElse(engine)
+      templateEngineInstances.putIfAbsent(ctx, engine).getOrElse(engine)
     }
   }
 }
@@ -58,15 +60,15 @@ trait ScalateSupport extends SkinnyMicroBase {
    * For instance, paths passed directly to the template engine are not
    * run through `findTemplate`.
    */
-  protected[skinny] var templateMicro: TemplateEngine = _
+  protected[skinny] var templateEngine: TemplateEngine = _
 
   abstract override def initialize(config: ConfigT) {
     super.initialize(config)
-    templateMicro = createTemplateEngine(config)
+    templateEngine = createTemplateEngine(config)
   }
 
   abstract override def shutdown() {
-    if (templateMicro != null) templateMicro.compiler.shutdown()
+    if (templateEngine != null) templateEngine.compiler.shutdown()
     super.shutdown()
   }
 
@@ -125,12 +127,12 @@ trait ScalateSupport extends SkinnyMicroBase {
     req: HttpServletRequest,
     resp: HttpServletResponse,
     out: PrintWriter)(implicit ctx: SkinnyMicroContext): SkinnyMicroRenderContext = {
-    new SkinnyMicroRenderContext(this, ctx, templateMicro, out, req, resp)
+    new SkinnyMicroRenderContext(this, ctx, templateEngine, out, req, resp)
   }
 
   implicit def skinnyMicroRenderContext(implicit ctx: SkinnyMicroContext): SkinnyMicroRenderContext = {
     new SkinnyMicroRenderContext(
-      this, ctx, templateMicro, response.getWriter, request, response)
+      this, ctx, templateEngine, response.getWriter, request, response)
   }
 
   /**
@@ -156,10 +158,10 @@ trait ScalateSupport extends SkinnyMicroBase {
   private[this] def renderScalateErrorPage(req: HttpServletRequest, resp: HttpServletResponse, e: Throwable) = {
     resp.setStatus(500)
     resp.setContentType("text/html")
-    val errorPage = templateMicro.load("/WEB-INF/scalate/errors/500.scaml")
+    val errorPage = templateEngine.load("/WEB-INF/scalate/errors/500.scaml")
     val ctx = createRenderContext(req, resp, resp.getWriter)(context)
     ctx.setAttribute("javax.servlet.error.exception", Some(e))
-    templateMicro.layout(errorPage, ctx)
+    templateEngine.layout(errorPage, ctx)
   }
 
   /**
@@ -255,7 +257,7 @@ trait ScalateSupport extends SkinnyMicroBase {
     }
 
     attrs foreach { case (k, v) => context.attributes(k) = v }
-    templateMicro.layout(uri, context)
+    templateEngine.layout(uri, context)
     buffer.toString
   }
 
@@ -269,15 +271,15 @@ trait ScalateSupport extends SkinnyMicroBase {
    */
   protected def layoutTemplate(path: String, attributes: (String, Any)*)(
     implicit ctx: SkinnyMicroContext, renderCtx: SkinnyMicroRenderContext): String = {
-    layoutTemplateAs(templateMicro.extensions)(path, attributes: _*)(ctx, renderCtx)
+    layoutTemplateAs(templateEngine.extensions)(path, attributes: _*)(ctx, renderCtx)
   }
 
   /**
    * Finds a template for a path.  Delegates to a TemplateFinder, and if
    * that fails, tries again with `/defaultIndexName` appended.
    */
-  protected def findTemplate(path: String, extensionSet: Set[String] = templateMicro.extensions): Option[String] = {
-    val finder = new TemplateFinder(templateMicro) {
+  protected def findTemplate(path: String, extensionSet: Set[String] = templateEngine.extensions): Option[String] = {
+    val finder = new TemplateFinder(templateEngine) {
       override lazy val extensions = extensionSet
     }
     finder.findTemplate(("/" + path).replaceAll("//", "/")) orElse

@@ -7,7 +7,7 @@ import scala.language.postfixOps
 object SkinnyMicroBuild extends Build {
 
   lazy val currentVersion = "2.0.0-SNAPSHOT"
-  lazy val skinnyVersion = "2.0.0-SNAPSHOT"
+  lazy val skinnyVersion = "2.0.0.M4"
   // Scalatra 2.4 will be incompatible with Skinny
   lazy val compatibleScalatraVersion = "2.3.1"
   // TODO: fix version before skinny 2.0.0
@@ -123,9 +123,7 @@ object SkinnyMicroBuild extends Build {
   lazy val microServer = Project(id = "microServer", base = file("micro-server"),
     settings = baseSettings ++ Seq(
       name := "skinny-micro-server",
-      libraryDependencies ++= servletApiDependencies ++ testDependencies ++ Seq(
-        // TODO
-        "org.skinny-framework" %% "skinny-standalone"  % skinnyVersion % Compile,
+      libraryDependencies ++= jettyDependencies ++ testDependencies ++ Seq(
         "org.skinny-framework" %% "skinny-http-client" % skinnyVersion % Test
       )
     )
@@ -138,8 +136,7 @@ object SkinnyMicroBuild extends Build {
     settings = baseSettings ++ Seq(
       name := "skinny-micro-test",
       libraryDependencies ++= servletApiDependencies ++ Seq(
-        // TODO: sbt occasionally fails to reselve junit when specifying 4.12
-        "junit"              %  "junit"            % "4.11"       % Compile,
+        "junit"              %  "junit"            % "4.12"       % Compile,
         "org.apache.commons" %  "commons-lang3"    % "3.4"        % Compile,
         "org.eclipse.jetty"  %  "jetty-webapp"     % jettyVersion % Compile,
         "org.apache.httpcomponents" % "httpclient" % "4.5"        % Compile,
@@ -171,6 +168,12 @@ object SkinnyMicroBuild extends Build {
     "org.json4s"    %% "json4s-jackson"     % json4SVersion    % Compile  excludeAll(fullExclusionRules: _*),
     "org.json4s"    %% "json4s-native"      % json4SVersion    % Provided excludeAll(fullExclusionRules: _*),
     "org.json4s"    %% "json4s-ext"         % json4SVersion    % Compile  excludeAll(fullExclusionRules: _*)
+  )
+  lazy val jettyDependencies = Seq(
+    "javax.servlet"     %  "javax.servlet-api" % "3.0.1"       % Compile,
+    "org.eclipse.jetty" %  "jetty-webapp"      % jettyVersion  % Compile,
+    "org.eclipse.jetty" %  "jetty-servlet"     % jettyVersion  % Compile,
+    "org.eclipse.jetty" %  "jetty-server"      % jettyVersion  % Compile
   )
   lazy val testDependencies = Seq(
     "org.scalatest"           %% "scalatest"       % scalaTestVersion % Test,
